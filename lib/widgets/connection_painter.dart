@@ -4,8 +4,9 @@ import '../models/edge.dart';
 
 class ConnectionPainter extends CustomPainter {
   final List<Edge> edges;
+  final Map<Edge, double> animatedEdges;
 
-  ConnectionPainter({required this.edges});
+  ConnectionPainter({required this.edges, this.animatedEdges = const {}});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -14,7 +15,18 @@ class ConnectionPainter extends CustomPainter {
       ..strokeWidth = 2;
 
     for (final edge in edges) {
-      canvas.drawLine(edge.from.position + const Offset(25, 25), edge.to.position + const Offset(25, 25), paint);
+      final from = edge.from.position + const Offset(25, 25);
+      final to = edge.to.position + const Offset(25, 25);
+      canvas.drawLine(from, to, paint);
+
+      if (animatedEdges.containsKey(edge)) {
+        final progress = animatedEdges[edge]!;
+        final point = Offset(
+          from.dx + (to.dx - from.dx) * progress,
+          from.dy + (to.dy - from.dy) * progress,
+        );
+        canvas.drawCircle(point, 3, Paint()..color = const Color.fromARGB(255, 255, 59, 59));
+      }
 
       final mid = Offset(
         (edge.from.position.dx + edge.to.position.dx) / 2,

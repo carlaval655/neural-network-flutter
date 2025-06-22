@@ -22,6 +22,7 @@ class _NetworkScreenState extends State<NetworkScreen> {
   Node? selectedNode;
   bool isConnecting = false;
   bool editMode = false;
+  Map<Edge, double> animatedEdges = {};
 
   void _addNode() {
     setState(() {
@@ -123,10 +124,23 @@ class _NetworkScreenState extends State<NetworkScreen> {
     }
   }
 
+  void _animateForwardPass() async {
+    for (final edge in edges) {
+      for (double t = 0.0; t <= 1.0; t += 0.05) {
+        setState(() {
+          animatedEdges = {edge: t};
+        });
+        await Future.delayed(const Duration(milliseconds: 16));
+      }
+      setState(() {
+        edge.to.value += edge.from.value * edge.weight;
+        animatedEdges = {};
+      });
+    }
+  }
+
   void _trainNetwork() {
-    setState(() {
-      network.forwardPropagation();
-    });
+    _animateForwardPass();
   }
 
   void _reset() {
@@ -178,7 +192,7 @@ class _NetworkScreenState extends State<NetworkScreen> {
               }
             },
             child: CustomPaint(
-              painter: ConnectionPainter(edges: edges),
+              painter: ConnectionPainter(edges: edges, animatedEdges: animatedEdges),
               child: Container(),
             ),
           ),
