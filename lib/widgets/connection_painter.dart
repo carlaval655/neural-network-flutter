@@ -25,7 +25,7 @@ class ConnectionPainter extends CustomPainter {
           from.dx + (to.dx - from.dx) * progress,
           from.dy + (to.dy - from.dy) * progress,
         );
-        canvas.drawCircle(point, 3, Paint()..color = const Color.fromARGB(255, 255, 59, 59));
+        canvas.drawCircle(point, 5, Paint()..color = const Color.fromARGB(255, 255, 59, 59));
       }
 
       final mid = Offset(
