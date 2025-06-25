@@ -31,6 +31,8 @@ class _NetworkScreenState extends State<NetworkScreen> {
   bool isTraining = false;
   int currentEpoch = 0;
 
+  late Node biasNode;
+
   void _addNode() {
     setState(() {
       final node = Node(id: nextId++, position: const Offset(100, 100));
@@ -227,44 +229,49 @@ void _trainNetwork() async {
             height: 180, // Ajusta alto según necesites
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal, // <--- Scroll horizontal
-              child: SingleChildScrollView(
-                child: DataTable(
-                  headingRowColor: MaterialStateProperty.all(Colors.grey[800]),
-                  columns: const [
-                    DataColumn(
-                      label: Text('x1', style: TextStyle(color: Colors.white)),
-                    ),
-                    DataColumn(
-                      label: Text('x2', style: TextStyle(color: Colors.white)),
-                    ),
-                    DataColumn(
-                      label: Text('y_esp', style: TextStyle(color: Colors.white)),
-                    ),
-                    DataColumn(
-                      label: Text('y_obt', style: TextStyle(color: Colors.white)),
-                    ),
-                    DataColumn(
-                      label: Text('err', style: TextStyle(color: Colors.white)),
-                    ),
-                  ],
-                  rows: logHistory.map((logEntry) {
-                    final parts = logEntry.split(', ');
-                    String x1 = parts.length > 0 ? parts[0].split('=').last : '';
-                    String x2 = parts.length > 1 ? parts[1].split('=').last : '';
-                    String yEsp = parts.length > 2 ? parts[2].split('=').last : '';
-                    String yObt = parts.length > 3 ? parts[3].split('=').last : '';
-                    String err = parts.length > 4 ? parts[4].split('=').last : '';
-
-                    return DataRow(
-                      cells: [
-                        DataCell(Text(x1)),
-                        DataCell(Text(x2)),
-                        DataCell(Text(yEsp)),
-                        DataCell(Text(yObt)),
-                        DataCell(Text(err)),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: 600),
+                child: IntrinsicWidth(
+                  child: SingleChildScrollView(
+                    child: DataTable(
+                      headingRowColor: MaterialStateProperty.all(Colors.grey[800]),
+                      columns: const [
+                        DataColumn(
+                          label: Text('x1', style: TextStyle(color: Colors.white)),
+                        ),
+                        DataColumn(
+                          label: Text('x2', style: TextStyle(color: Colors.white)),
+                        ),
+                        DataColumn(
+                          label: Text('y_esp', style: TextStyle(color: Colors.white)),
+                        ),
+                        DataColumn(
+                          label: Text('y_obt', style: TextStyle(color: Colors.white)),
+                        ),
+                        DataColumn(
+                          label: Text('err', style: TextStyle(color: Colors.white)),
+                        ),
                       ],
-                    );
-                  }).toList(),
+                      rows: logHistory.map((logEntry) {
+                        final parts = logEntry.split(', ');
+                        String x1 = parts.length > 0 ? parts[0].split('=').last : '';
+                        String x2 = parts.length > 1 ? parts[1].split('=').last : '';
+                        String yEsp = parts.length > 2 ? parts[2].split('=').last : '';
+                        String yObt = parts.length > 3 ? parts[3].split('=').last : '';
+                        String err = parts.length > 4 ? parts[4].split('=').last : '';
+
+                        return DataRow(
+                          cells: [
+                            DataCell(Text(x1)),
+                            DataCell(Text(x2)),
+                            DataCell(Text(yEsp)),
+                            DataCell(Text(yObt)),
+                            DataCell(Text(err)),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -304,13 +311,13 @@ void _trainNetwork() async {
                   },
                   child: CustomPaint(
                     painter: ConnectionPainter(
-                      edges: edges,
+                      edges: edges.where((e) => e.from != biasNode).toList(),
                       animatedEdges: animatedEdges,
                     ),
                     child: Container(),
                   ),
                 ),
-                ...nodes.map(
+                ...nodes.where((n) => n != biasNode).map(
                   (node) => NeuronWidget(
                     node: node,
                     onTap: () => _onNodeTap(node),
@@ -367,29 +374,31 @@ void _trainNetwork() async {
     final bias = Node(id: nextId++, position: const Offset(50, 50));
     bias.value = 1.0;
 
-    nodes.addAll([i1, i2, o1, bias]);
+    nodes.addAll([i1, i2, o1]);
     network.addNode(i1);
     network.addNode(i2);
     network.addNode(o1);
     network.addNode(bias);
+    this.biasNode = bias;
 
     i1.value = 0.0;
     i2.value = 0.0;
 
-    final e1 = Edge(from: i1, to: o1, weight: rand.nextBool() ? rand.nextDouble() * 0.5 + 0.5 : rand.nextDouble() * -0.5 - 0.5);
-    final e2 = Edge(from: i2, to: o1, weight: rand.nextBool() ? rand.nextDouble() * 0.5 + 0.5 : rand.nextDouble() * -0.5 - 0.5);
-    final e3 = Edge(from: bias, to: o1, weight: rand.nextBool() ? rand.nextDouble() * 0.5 + 0.5 : rand.nextDouble() * -0.5 - 0.5);
+    final e1 = Edge(from: i1, to: o1, weight: rand.nextDouble() * 2 - 1);
+    final e2 = Edge(from: i2, to: o1, weight: rand.nextDouble() * 2 - 1);
+    final e3 = Edge(from: bias, to: o1, weight: 0.5); // sesgo inicial para ayudar
 
     edges.addAll([e1, e2, e3]);
+    // e3 (bias) ahora se agrega a edges para estar incluido en retropropagación, pero se mantiene oculto visualmente
     network.addEdge(e1);
     network.addEdge(e2);
-    network.addEdge(e3);
+    network.addEdge(e3); // mantener la conexión lógica del bias
   });
 }
 
   // Entrenamiento para compuerta lógica AND sin bias, tabla simple
   void _entrenarAND() async {
-    const double learningRate = 0.3;
+    const double learningRate = 0.5;
     const trainingData = [
       [0.0, 0.0, 0.0],
       [0.0, 1.0, 0.0],
@@ -408,16 +417,16 @@ void _trainNetwork() async {
       '',
     ]).toList();
 
-    for (int epoch = 0; epoch < 1000 && isTraining; epoch++) {
+    for (int epoch = 0; epoch < 3000 && isTraining; epoch++) {
       currentEpoch = epoch + 1;
 
       for (int i = 0; i < trainingData.length; i++) {
         final data = trainingData[i];
-        if (nodes.length < 4) return;
+        if (nodes.length < 3) return;
         final i1 = nodes[0];
         final i2 = nodes[1];
         final o1 = nodes[2];
-        final bias = nodes[3];
+        final bias = biasNode;
 
         for (final n in nodes) {
           if (n != i1 && n != i2 && n != bias) n.value = 0.0;
@@ -436,12 +445,21 @@ void _trainNetwork() async {
         final obtained = o1.value.clamp(0.0, 1.0);
         final error = expected - obtained;
 
+        if (expected == 1.0 && obtained < 0.9) {
+          //logHistory.add('Advertencia: salida incorrecta para caso (1,1) en epoch $currentEpoch: ${obtained.toStringAsFixed(2)}');
+        }
+
         for (final edge in edges.where((e) => e.to == o1)) {
           final derivative = obtained * (1 - obtained); // derivada del sigmoide
           final delta = learningRate * error * derivative * edge.from.value;
+          final oldWeight = edge.weight;
           edge.weight += delta;
           edge.weight = edge.weight.clamp(-1.0, 1.0);
-          await _animateEdge(edge);
+          if ((edge.weight - oldWeight).abs() > 0.0001) {
+            //logHistory.add('Epoch $currentEpoch - Peso actualizado ${edge.from.id}->${edge.to.id}: ${oldWeight.toStringAsFixed(3)} → ${edge.weight.toStringAsFixed(3)}');
+            final reverseEdge = Edge(from: edge.to, to: edge.from);
+            await _animateEdge(reverseEdge);
+          }
         }
 
         history[i][3] = obtained.toStringAsFixed(2);
