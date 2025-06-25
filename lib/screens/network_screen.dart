@@ -469,9 +469,6 @@ void _trainNetwork() async {
       await Future.delayed(const Duration(milliseconds: 150));
       logHistory = history.map((row) => 'x1=${row[0]}, x2=${row[1]}, y_esp=${row[2]}, y_obt=${row[3]}, err=${row[4]}').toList();
 
-      logHistory.add('Epoch $currentEpoch - Pesos: ' +
-        edges.map((e) => '${e.from.id}->${e.to.id}=${e.weight.toStringAsFixed(2)}').join(', ') +
-        ' | Salida=${nodes[2].value.toStringAsFixed(2)}');
 
       double avgError = history.map((row) => double.tryParse(row[4])?.abs() ?? 0.0).reduce((a, b) => a + b) / history.length;
       logHistory.add('Epoch $currentEpoch - Error promedio: ${avgError.toStringAsFixed(4)}');

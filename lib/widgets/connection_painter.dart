@@ -19,14 +19,28 @@ class ConnectionPainter extends CustomPainter {
       final to = edge.to.position + const Offset(25, 25);
       canvas.drawLine(from, to, paint);
 
-      if (animatedEdges.containsKey(edge)) {
-        final progress = animatedEdges[edge]!;
-        final point = Offset(
-          from.dx + (to.dx - from.dx) * progress,
-          from.dy + (to.dy - from.dy) * progress,
-        );
-        canvas.drawCircle(point, 5, Paint()..color = const Color.fromARGB(255, 255, 59, 59));
-      }
+      for (final animEntry in animatedEdges.entries) {
+  final animEdge = animEntry.key;
+  final progress = animEntry.value;
+
+  // Coincide en dirección directa o inversa
+  final matchesForward = animEdge.from == edge.from && animEdge.to == edge.to;
+  final matchesBackward = animEdge.from == edge.to && animEdge.to == edge.from;
+
+  if (matchesForward || matchesBackward) {
+    final start = matchesBackward ? to : from;
+    final end = matchesBackward ? from : to;
+
+    final point = Offset(
+      start.dx + (end.dx - start.dx) * progress,
+      start.dy + (end.dy - start.dy) * progress,
+    );
+    final color = matchesBackward
+        ? const Color.fromARGB(255, 59, 130, 246) // Azul para retropropagación
+        : const Color.fromARGB(255, 255, 59, 59); // Rojo para propagación directa
+    canvas.drawCircle(point, 5, Paint()..color = color);
+  }
+}
 
       final mid = Offset(
         (edge.from.position.dx + edge.to.position.dx) / 2,
