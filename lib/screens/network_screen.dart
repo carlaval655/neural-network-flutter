@@ -196,228 +196,254 @@ void _trainNetwork() async {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Red Neuronal Visual'),
-        actions: [
-          if (isTraining)
-            IconButton(
-              icon: const Icon(Icons.stop),
-              onPressed: () {
-                setState(() => isTraining = false);
-              },
-            )
-        ],
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      body: Stack(
-        children: [
-          // Mostrar epoch encima de la tabla y gráfico
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                'Epoch: $currentEpoch',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF1C2E3E),
+          title: const Text('Red Neuronal Visual'),
+          actions: [
+            if (isTraining)
+              IconButton(
+                icon: const Icon(Icons.stop),
+                onPressed: () {
+                  setState(() => isTraining = false);
+                },
+              )
+          ],
+        ),
+        body: Stack(
+          children: [
+            // Mostrar epoch encima de la tabla y gráfico
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  'Epoch: $currentEpoch',
+                  style: const TextStyle(color: Color(0xFF00D8FF), fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
             ),
-          ),
-          // Tabla de valores y gráfico de error, uno al lado del otro
-          Positioned(
-            top: 30,
-            left: 0,
-            right: 0,
-            height: 300,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Tabla de valores
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Valores por epoch',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(minWidth: 600),
-                              child: IntrinsicWidth(
-                                child: SingleChildScrollView(
-                                  child: DataTable(
-                                    headingRowColor: MaterialStatePropertyAll(Colors.grey),
-                                    columns: const [
-                                      DataColumn(label: Text('x1', style: TextStyle(color: Colors.white))),
-                                      DataColumn(label: Text('x2', style: TextStyle(color: Colors.white))),
-                                      DataColumn(label: Text('y_esp', style: TextStyle(color: Colors.white))),
-                                      DataColumn(label: Text('y_obt', style: TextStyle(color: Colors.white))),
-                                      DataColumn(label: Text('err', style: TextStyle(color: Colors.white))),
-                                    ],
-                                    rows: logHistory.map((logEntry) {
-                                      final parts = logEntry.split(', ');
-                                      String x1 = parts.length > 0 ? parts[0].split('=').last : '';
-                                      String x2 = parts.length > 1 ? parts[1].split('=').last : '';
-                                      String yEsp = parts.length > 2 ? parts[2].split('=').last : '';
-                                      String yObt = parts.length > 3 ? parts[3].split('=').last : '';
-                                      String err = parts.length > 4 ? parts[4].split('=').last : '';
-
-                                      return DataRow(
-                                        cells: [
-                                          DataCell(Text(x1)),
-                                          DataCell(Text(x2)),
-                                          DataCell(Text(yEsp)),
-                                          DataCell(Text(yObt)),
-                                          DataCell(Text(err)),
+            // Tabla de valores y gráfico de error, uno al lado del otro
+            Positioned(
+              top: 30,
+              left: 0,
+              right: 0,
+              height: 300,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Tabla de valores
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Valores por epoch',
+                              style: TextStyle(
+                                color: Color(0xFF00D8FF),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Expanded(
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(minWidth: 600),
+                                  child: IntrinsicWidth(
+                                    child: SingleChildScrollView(
+                                      child: DataTable(
+                                        headingRowColor: MaterialStatePropertyAll(Colors.grey),
+                                        columns: const [
+                                          DataColumn(label: Text('x1', style: TextStyle(color: Color(0xFF00D8FF), fontWeight: FontWeight.bold, fontSize: 16))),
+                                          DataColumn(label: Text('x2', style: TextStyle(color: Color(0xFF00D8FF), fontWeight: FontWeight.bold, fontSize: 16))),
+                                          DataColumn(label: Text('y_esp', style: TextStyle(color: Color(0xFF00D8FF), fontWeight: FontWeight.bold, fontSize: 16))),
+                                          DataColumn(label: Text('y_obt', style: TextStyle(color: Color(0xFF00D8FF), fontWeight: FontWeight.bold, fontSize: 16))),
+                                          DataColumn(label: Text('err', style: TextStyle(color: Color(0xFF00D8FF), fontWeight: FontWeight.bold, fontSize: 16))),
                                         ],
-                                      );
-                                    }).toList(),
+                                        rows: logHistory.map((logEntry) {
+                                          final parts = logEntry.split(', ');
+                                          String x1 = parts.length > 0 ? parts[0].split('=').last : '';
+                                          String x2 = parts.length > 1 ? parts[1].split('=').last : '';
+                                          String yEsp = parts.length > 2 ? parts[2].split('=').last : '';
+                                          String yObt = parts.length > 3 ? parts[3].split('=').last : '';
+                                          String err = parts.length > 4 ? parts[4].split('=').last : '';
+
+                                          return DataRow(
+                                            cells: [
+                                              DataCell(Text(x1)),
+                                              DataCell(Text(x2)),
+                                              DataCell(Text(yEsp)),
+                                              DataCell(Text(yObt)),
+                                              DataCell(Text(err)),
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 16),
+                      // Gráfico de error
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Evolución del error promedio',
+                              style: TextStyle(
+                                color: Color(0xFF00D8FF),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Expanded(
+                              child: LineChart(
+                                LineChartData(
+                                  lineBarsData: [
+                                    LineChartBarData(
+                                      spots: errorPoints,
+                                      isCurved: true,
+                                      color: const Color(0xFF00D8FF),
+                                      barWidth: 2,
+                                      dotData: FlDotData(show: false),
+                                      belowBarData: BarAreaData(show: true, color: const Color(0xFF00D8FF).withOpacity(0.2)),
+                                    )
+                                  ],
+                                  titlesData: FlTitlesData(
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: true, reservedSize: 28),
+                                    ),
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: true),
+                                    ),
+                                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  ),
+                                  borderData: FlBorderData(show: true),
+                                  gridData: FlGridData(show: true),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Aquí va el resto de la UI (red neuronal)
+            Positioned.fill(
+              top: 360,
+              child: Stack(
+                children: [
+                  GestureDetector(
+                    onTapUp: (details) {
+                      final tapPos = details.localPosition;
+                      for (final edge in edges) {
+                        final from = edge.from.position + const Offset(25, 25);
+                        final to = edge.to.position + const Offset(25, 25);
+
+                        final dx = to.dx - from.dx;
+                        final dy = to.dy - from.dy;
+                        final lengthSquared = dx * dx + dy * dy;
+                        if (lengthSquared == 0) continue;
+
+                        final t =
+                            ((tapPos.dx - from.dx) * dx +
+                                (tapPos.dy - from.dy) * dy) /
+                            lengthSquared;
+                        if (t < 0.0 || t > 1.0) continue;
+
+                        final proj = Offset(from.dx + t * dx, from.dy + t * dy);
+                        final distance = (tapPos - proj).distance;
+
+                        if (distance < 10) {
+                          _editEdgeWeight(edge);
+                          break;
+                        }
+                      }
+                    },
+                    child: CustomPaint(
+                      painter: ConnectionPainter(
+                        edges: edges.where((e) => e.from != biasNode).toList(),
+                        animatedEdges: animatedEdges,
+                      ),
+                      child: Container(),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  // Gráfico de error
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Evolución del error promedio',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Expanded(
-                          child: LineChart(
-                            LineChartData(
-                              lineBarsData: [
-                                LineChartBarData(
-                                  spots: errorPoints,
-                                  isCurved: true,
-                                  color: Colors.orange,
-                                  barWidth: 2,
-                                  dotData: FlDotData(show: false),
-                                  belowBarData: BarAreaData(show: true, color: Colors.orange.withOpacity(0.2)),
-                                )
-                              ],
-                              titlesData: FlTitlesData(
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: true, reservedSize: 28),
-                                ),
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(showTitles: true),
-                                ),
-                                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              ),
-                              borderData: FlBorderData(show: true),
-                              gridData: FlGridData(show: true),
-                            ),
-                          ),
-                        ),
-                      ],
+                  ...nodes.where((n) => n != biasNode).map(
+                    (node) => NeuronWidget(
+                      node: node,
+                      onTap: () => _onNodeTap(node),
+                      onPositionChanged: (offset) {
+                        setState(() => node.position = offset);
+                      },
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          // Aquí va el resto de la UI (red neuronal)
-          Positioned.fill(
-            top: 360,
-            child: Stack(
-              children: [
-                GestureDetector(
-                  onTapUp: (details) {
-                    final tapPos = details.localPosition;
-                    for (final edge in edges) {
-                      final from = edge.from.position + const Offset(25, 25);
-                      final to = edge.to.position + const Offset(25, 25);
-
-                      final dx = to.dx - from.dx;
-                      final dy = to.dy - from.dy;
-                      final lengthSquared = dx * dx + dy * dy;
-                      if (lengthSquared == 0) continue;
-
-                      final t =
-                          ((tapPos.dx - from.dx) * dx +
-                              (tapPos.dy - from.dy) * dy) /
-                          lengthSquared;
-                      if (t < 0.0 || t > 1.0) continue;
-
-                      final proj = Offset(from.dx + t * dx, from.dy + t * dy);
-                      final distance = (tapPos - proj).distance;
-
-                      if (distance < 10) {
-                        _editEdgeWeight(edge);
-                        break;
-                      }
-                    }
-                  },
-                  child: CustomPaint(
-                    painter: ConnectionPainter(
-                      edges: edges.where((e) => e.from != biasNode).toList(),
-                      animatedEdges: animatedEdges,
-                    ),
-                    child: Container(),
-                  ),
-                ),
-                ...nodes.where((n) => n != biasNode).map(
-                  (node) => NeuronWidget(
-                    node: node,
-                    onTap: () => _onNodeTap(node),
-                    onPositionChanged: (offset) {
-                      setState(() => node.position = offset);
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: BottomAppBar(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            IconButton(onPressed: _addNode, icon: const Icon(Icons.add_circle)),
-            IconButton(
-              onPressed: _toggleConnectionMode,
-              icon: Icon(isConnecting ? Icons.link_off : Icons.link),
-            ),
-            IconButton(
-              onPressed: _toggleEditMode,
-              icon: Icon(editMode ? Icons.edit_off : Icons.edit),
-            ),
-            IconButton(
-              onPressed: _trainNetwork,
-              icon: const Icon(Icons.play_arrow),
-            ),
-            IconButton(onPressed: _reset, icon: const Icon(Icons.refresh)),
-            IconButton(
-              onPressed: _crearEjemploDosCapas,
-              icon: const Icon(Icons.auto_fix_high),
-            ),
-            IconButton(onPressed: _entrenarAND, icon: const Icon(Icons.bolt)),
-            IconButton(
-              onPressed: _entrenarOR,
-              icon: const Icon(Icons.lightbulb),
-            ),
           ],
+        ),
+        bottomNavigationBar: BottomAppBar(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(onPressed: _addNode, icon: const Icon(Icons.add_circle)),
+              IconButton(
+                onPressed: _toggleConnectionMode,
+                icon: Icon(isConnecting ? Icons.link_off : Icons.link),
+              ),
+              IconButton(
+                onPressed: _toggleEditMode,
+                icon: Icon(editMode ? Icons.edit_off : Icons.edit),
+              ),
+              IconButton(
+                onPressed: _trainNetwork,
+                icon: const Icon(Icons.play_arrow),
+              ),
+              IconButton(onPressed: _reset, icon: const Icon(Icons.refresh)),
+              IconButton(
+                onPressed: _crearEjemploDosCapas,
+                icon: const Icon(Icons.auto_fix_high),
+              ),
+              IconButton(onPressed: _entrenarAND, icon: const Icon(Icons.bolt)),
+              IconButton(
+                onPressed: _entrenarOR,
+                icon: const Icon(Icons.lightbulb),
+              ),
+            ],
+          ),
         ),
       ),
     );
