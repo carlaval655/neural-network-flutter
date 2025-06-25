@@ -413,6 +413,10 @@ void _trainNetwork() async {
               icon: const Icon(Icons.auto_fix_high),
             ),
             IconButton(onPressed: _entrenarAND, icon: const Icon(Icons.bolt)),
+            IconButton(
+              onPressed: _entrenarOR,
+              icon: const Icon(Icons.lightbulb),
+            ),
           ],
         ),
       ),
@@ -544,5 +548,87 @@ void _trainNetwork() async {
     isTraining = false;
   }
 
+  void _entrenarOR() async {
+    const double learningRate = 0.5;
+    const trainingData = [
+      [0.0, 0.0, 0.0],
+      [0.0, 1.0, 1.0],
+      [1.0, 0.0, 1.0],
+      [1.0, 1.0, 1.0],
+    ];
+
+    isTraining = true;
+    currentEpoch = 0;
+    errorPoints.clear();
+
+    List<List<String>> history = trainingData.map((data) => [
+      data[0].toString(),
+      data[1].toString(),
+      data[2].toString(),
+      '',
+      '',
+    ]).toList();
+
+    for (int epoch = 0; epoch < 3000 && isTraining; epoch++) {
+      currentEpoch = epoch + 1;
+
+      for (int i = 0; i < trainingData.length; i++) {
+        final data = trainingData[i];
+        if (nodes.length < 3) return;
+        final i1 = nodes[0];
+        final i2 = nodes[1];
+        final o1 = nodes[2];
+        final bias = biasNode;
+
+        for (final n in nodes) {
+          if (n != i1 && n != i2 && n != bias) n.value = 0.0;
+        }
+
+        i1.value = data[0];
+        i2.value = data[1];
+        final expected = data[2];
+
+        for (final edge in edges) {
+          await _animateEdge(edge);
+          edge.to.value += edge.from.value * edge.weight;
+        }
+
+        o1.value = 1 / (1 + exp(-o1.value));
+        final obtained = o1.value.clamp(0.0, 1.0);
+        final error = expected - obtained;
+
+        for (final edge in edges.where((e) => e.to == o1)) {
+          final derivative = obtained * (1 - obtained);
+          final delta = learningRate * error * derivative * edge.from.value;
+          final oldWeight = edge.weight;
+          edge.weight += delta;
+          edge.weight = edge.weight.clamp(-1.0, 1.0);
+          if ((edge.weight - oldWeight).abs() > 0.0001) {
+            final reverseEdge = Edge(from: edge.to, to: edge.from);
+            await _animateEdge(reverseEdge);
+          }
+        }
+
+        history[i][3] = obtained.toStringAsFixed(2);
+        history[i][4] = error.toStringAsFixed(2);
+      }
+
+      await Future.delayed(const Duration(milliseconds: 150));
+      logHistory = history.map((row) => 'x1=${row[0]}, x2=${row[1]}, y_esp=${row[2]}, y_obt=${row[3]}, err=${row[4]}').toList();
+
+      double avgError = history.map((row) => double.tryParse(row[4])?.abs() ?? 0.0).reduce((a, b) => a + b) / history.length;
+      errorPoints.add(FlSpot(currentEpoch.toDouble(), avgError));
+      logHistory.add('Epoch $currentEpoch - Error promedio: ${avgError.toStringAsFixed(4)}');
+
+      if (avgError <= 0.01) {
+        logHistory.add('Entrenamiento detenido automáticamente por bajo error promedio.');
+        break;
+      }
+
+      setState(() {});
+    }
+
+    isTraining = false;
+  }
   
 }
