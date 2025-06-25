@@ -1,6 +1,7 @@
 /// screens/network_screen.dart
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../models/node.dart';
 import '../models/edge.dart';
 import '../widgets/neuron_widget.dart';
@@ -30,6 +31,7 @@ class _NetworkScreenState extends State<NetworkScreen> {
 
   bool isTraining = false;
   int currentEpoch = 0;
+  List<FlSpot> errorPoints = [];
 
   late Node biasNode;
 
@@ -184,6 +186,7 @@ void _trainNetwork() async {
       logHistory.clear();
       isTraining = false;
       currentEpoch = 0;
+      errorPoints.clear();
     });
   }
 
@@ -208,7 +211,7 @@ void _trainNetwork() async {
       ),
       body: Stack(
         children: [
-          // Mostrar epoch encima de la tabla
+          // Mostrar epoch encima de la tabla y gráfico
           Positioned(
             top: 0,
             left: 0,
@@ -221,65 +224,121 @@ void _trainNetwork() async {
               ),
             ),
           ),
-          // Tabla fija en esquina superior izquierda
+          // Tabla de valores y gráfico de error, uno al lado del otro
           Positioned(
             top: 30,
             left: 0,
-            width: 800, // Ajusta ancho según necesites
-            height: 180, // Ajusta alto según necesites
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal, // <--- Scroll horizontal
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: 600),
-                child: IntrinsicWidth(
-                  child: SingleChildScrollView(
-                    child: DataTable(
-                      headingRowColor: MaterialStateProperty.all(Colors.grey[800]),
-                      columns: const [
-                        DataColumn(
-                          label: Text('x1', style: TextStyle(color: Colors.white)),
+            right: 0,
+            height: 300,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tabla de valores
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Valores por epoch',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
-                        DataColumn(
-                          label: Text('x2', style: TextStyle(color: Colors.white)),
-                        ),
-                        DataColumn(
-                          label: Text('y_esp', style: TextStyle(color: Colors.white)),
-                        ),
-                        DataColumn(
-                          label: Text('y_obt', style: TextStyle(color: Colors.white)),
-                        ),
-                        DataColumn(
-                          label: Text('err', style: TextStyle(color: Colors.white)),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(minWidth: 600),
+                              child: IntrinsicWidth(
+                                child: SingleChildScrollView(
+                                  child: DataTable(
+                                    headingRowColor: MaterialStatePropertyAll(Colors.grey),
+                                    columns: const [
+                                      DataColumn(label: Text('x1', style: TextStyle(color: Colors.white))),
+                                      DataColumn(label: Text('x2', style: TextStyle(color: Colors.white))),
+                                      DataColumn(label: Text('y_esp', style: TextStyle(color: Colors.white))),
+                                      DataColumn(label: Text('y_obt', style: TextStyle(color: Colors.white))),
+                                      DataColumn(label: Text('err', style: TextStyle(color: Colors.white))),
+                                    ],
+                                    rows: logHistory.map((logEntry) {
+                                      final parts = logEntry.split(', ');
+                                      String x1 = parts.length > 0 ? parts[0].split('=').last : '';
+                                      String x2 = parts.length > 1 ? parts[1].split('=').last : '';
+                                      String yEsp = parts.length > 2 ? parts[2].split('=').last : '';
+                                      String yObt = parts.length > 3 ? parts[3].split('=').last : '';
+                                      String err = parts.length > 4 ? parts[4].split('=').last : '';
+
+                                      return DataRow(
+                                        cells: [
+                                          DataCell(Text(x1)),
+                                          DataCell(Text(x2)),
+                                          DataCell(Text(yEsp)),
+                                          DataCell(Text(yObt)),
+                                          DataCell(Text(err)),
+                                        ],
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
-                      rows: logHistory.map((logEntry) {
-                        final parts = logEntry.split(', ');
-                        String x1 = parts.length > 0 ? parts[0].split('=').last : '';
-                        String x2 = parts.length > 1 ? parts[1].split('=').last : '';
-                        String yEsp = parts.length > 2 ? parts[2].split('=').last : '';
-                        String yObt = parts.length > 3 ? parts[3].split('=').last : '';
-                        String err = parts.length > 4 ? parts[4].split('=').last : '';
-
-                        return DataRow(
-                          cells: [
-                            DataCell(Text(x1)),
-                            DataCell(Text(x2)),
-                            DataCell(Text(yEsp)),
-                            DataCell(Text(yObt)),
-                            DataCell(Text(err)),
-                          ],
-                        );
-                      }).toList(),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  // Gráfico de error
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Evolución del error promedio',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: LineChart(
+                            LineChartData(
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: errorPoints,
+                                  isCurved: true,
+                                  color: Colors.orange,
+                                  barWidth: 2,
+                                  dotData: FlDotData(show: false),
+                                  belowBarData: BarAreaData(show: true, color: Colors.orange.withOpacity(0.2)),
+                                )
+                              ],
+                              titlesData: FlTitlesData(
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: true, reservedSize: 28),
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: true),
+                                ),
+                                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                              ),
+                              borderData: FlBorderData(show: true),
+                              gridData: FlGridData(show: true),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-
           // Aquí va el resto de la UI (red neuronal)
           Positioned.fill(
-            top: 210,
+            top: 360,
             child: Stack(
               children: [
                 GestureDetector(
@@ -408,6 +467,7 @@ void _trainNetwork() async {
 
     isTraining = true;
     currentEpoch = 0;
+    errorPoints.clear();
 
     List<List<String>> history = trainingData.map((data) => [
       data[0].toString(),
@@ -469,8 +529,8 @@ void _trainNetwork() async {
       await Future.delayed(const Duration(milliseconds: 150));
       logHistory = history.map((row) => 'x1=${row[0]}, x2=${row[1]}, y_esp=${row[2]}, y_obt=${row[3]}, err=${row[4]}').toList();
 
-
       double avgError = history.map((row) => double.tryParse(row[4])?.abs() ?? 0.0).reduce((a, b) => a + b) / history.length;
+      errorPoints.add(FlSpot(currentEpoch.toDouble(), avgError));
       logHistory.add('Epoch $currentEpoch - Error promedio: ${avgError.toStringAsFixed(4)}');
 
       if (avgError <= 0.01) {
