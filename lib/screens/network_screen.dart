@@ -361,88 +361,105 @@ void _trainNetwork() async {
                 ),
               ),
             ),
-            // Aquí va el resto de la UI (red neuronal)
-            Positioned.fill(
-              top: 360,
-              child: Stack(
-                children: [
-                  GestureDetector(
-                    onTapUp: (details) {
-                      final tapPos = details.localPosition;
-                      for (final edge in edges) {
-                        final from = edge.from.position + const Offset(25, 25);
-                        final to = edge.to.position + const Offset(25, 25);
+          // Aquí va el resto de la UI (red neuronal)
+          Positioned.fill(
+            top: 360,
+            child: Stack(
+              children: [
+                GestureDetector(
+                  onTapUp: (details) {
+                    final tapPos = details.localPosition;
+                    for (final edge in edges) {
+                      final from = edge.from.position + const Offset(25, 25);
+                      final to = edge.to.position + const Offset(25, 25);
 
-                        final dx = to.dx - from.dx;
-                        final dy = to.dy - from.dy;
-                        final lengthSquared = dx * dx + dy * dy;
-                        if (lengthSquared == 0) continue;
+                      final dx = to.dx - from.dx;
+                      final dy = to.dy - from.dy;
+                      final lengthSquared = dx * dx + dy * dy;
+                      if (lengthSquared == 0) continue;
 
-                        final t =
-                            ((tapPos.dx - from.dx) * dx +
-                                (tapPos.dy - from.dy) * dy) /
-                            lengthSquared;
-                        if (t < 0.0 || t > 1.0) continue;
+                      final t =
+                          ((tapPos.dx - from.dx) * dx +
+                              (tapPos.dy - from.dy) * dy) /
+                          lengthSquared;
+                      if (t < 0.0 || t > 1.0) continue;
 
-                        final proj = Offset(from.dx + t * dx, from.dy + t * dy);
-                        final distance = (tapPos - proj).distance;
+                      final proj = Offset(from.dx + t * dx, from.dy + t * dy);
+                      final distance = (tapPos - proj).distance;
 
-                        if (distance < 10) {
-                          _editEdgeWeight(edge);
-                          break;
-                        }
+                      if (distance < 10) {
+                        _editEdgeWeight(edge);
+                        break;
                       }
+                    }
+                  },
+                  child: CustomPaint(
+                    painter: ConnectionPainter(
+                      edges: edges.where((e) => e.from != biasNode).toList(),
+                      animatedEdges: animatedEdges,
+                    ),
+                    child: Container(),
+                  ),
+                ),
+                ...nodes.where((n) => n != biasNode).map(
+                  (node) => NeuronWidget(
+                    node: node,
+                    onTap: () => _onNodeTap(node),
+                    onPositionChanged: (offset) {
+                      setState(() => node.position = offset);
                     },
-                    child: CustomPaint(
-                      painter: ConnectionPainter(
-                        edges: edges.where((e) => e.from != biasNode).toList(),
-                        animatedEdges: animatedEdges,
-                      ),
-                      child: Container(),
-                    ),
                   ),
-                  ...nodes.where((n) => n != biasNode).map(
-                    (node) => NeuronWidget(
-                      node: node,
-                      onTap: () => _onNodeTap(node),
-                      onPositionChanged: (offset) {
-                        setState(() => node.position = offset);
-                      },
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
           ],
         ),
         bottomNavigationBar: BottomAppBar(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              IconButton(onPressed: _addNode, icon: const Icon(Icons.add_circle)),
-              IconButton(
-                onPressed: _toggleConnectionMode,
-                icon: Icon(isConnecting ? Icons.link_off : Icons.link),
-              ),
-              IconButton(
-                onPressed: _toggleEditMode,
-                icon: Icon(editMode ? Icons.edit_off : Icons.edit),
-              ),
-              IconButton(
-                onPressed: _trainNetwork,
-                icon: const Icon(Icons.play_arrow),
-              ),
-              IconButton(onPressed: _reset, icon: const Icon(Icons.refresh)),
-              IconButton(
-                onPressed: _crearEjemploDosCapas,
-                icon: const Icon(Icons.auto_fix_high),
-              ),
-              IconButton(onPressed: _entrenarAND, icon: const Icon(Icons.bolt)),
-              IconButton(
-                onPressed: _entrenarOR,
-                icon: const Icon(Icons.lightbulb),
-              ),
-            ],
+  TextButton.icon(
+    onPressed: _addNode,
+    icon: const Icon(Icons.add_circle_outline),
+    label: const Text("Añadir nodo"),
+  ),
+  TextButton.icon(
+    onPressed: _toggleConnectionMode,
+    icon: Icon(isConnecting ? Icons.link_off : Icons.link),
+    label: Text(isConnecting ? "Cancelar conexión" : "Conectar nodos"),
+  ),
+  TextButton.icon(
+    onPressed: _toggleEditMode,
+    icon: Icon(editMode ? Icons.edit_off : Icons.edit),
+    label: Text(editMode ? "Salir de edición" : "Editar nodos"),
+  ),
+  TextButton.icon(
+    onPressed: _trainNetwork,
+    icon: const Icon(Icons.play_arrow),
+    label: const Text("Simular red"),
+  ),
+  TextButton.icon(
+    onPressed: _reset,
+    icon: const Icon(Icons.refresh),
+    label: const Text("Reiniciar"),
+  ),
+  TextButton.icon(
+    onPressed: _crearEjemploDosCapas,
+    icon: const Icon(Icons.auto_fix_high),
+    label: const Text("Crear red simple"),
+  ),
+  TextButton.icon(
+    onPressed: _entrenarAND,
+    icon: const Icon(Icons.call_merge),
+    label: const Text("Entrenar AND"),
+  ),
+  TextButton.icon(
+    onPressed: _entrenarOR,
+    icon: const Icon(Icons.device_hub),
+    label: const Text("Entrenar OR"),
+  ),
+],
           ),
         ),
       ),
@@ -456,11 +473,11 @@ void _trainNetwork() async {
     network.reset();
     nextId = 0;
 
-    final i1 = Node(id: nextId++, position: const Offset(50, 100));
-    final i2 = Node(id: nextId++, position: const Offset(50, 200));
-    final o1 = Node(id: nextId++, position: const Offset(300, 150));
+    final i1 = Node(id: nextId++, position: const Offset(300, 100));
+    final i2 = Node(id: nextId++, position: const Offset(300, 200));
+    final o1 = Node(id: nextId++, position: const Offset(550, 150));
     final rand = Random();
-    final bias = Node(id: nextId++, position: const Offset(50, 50));
+    final bias = Node(id: nextId++, position: const Offset(200, 150));
     bias.value = 1.0;
 
     nodes.addAll([i1, i2, o1]);

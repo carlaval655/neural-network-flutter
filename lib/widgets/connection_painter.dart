@@ -36,7 +36,7 @@ class ConnectionPainter extends CustomPainter {
       start.dy + (end.dy - start.dy) * progress,
     );
     final color = matchesBackward
-        ? const Color.fromARGB(255, 59, 130, 246) // Azul para retropropagación
+        ? const Color.fromARGB(255, 59, 246, 72) // Azul para retropropagación
         : const Color.fromARGB(255, 255, 59, 59); // Rojo para propagación directa
     canvas.drawCircle(point, 5, Paint()..color = color);
   }
