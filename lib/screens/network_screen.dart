@@ -28,6 +28,9 @@ class _NetworkScreenState extends State<NetworkScreen> {
   Map<Edge, double> animatedEdges = {};
   List<String> logHistory = [];
 
+  bool isTraining = false;
+  int currentEpoch = 0;
+
   void _addNode() {
     setState(() {
       final node = Node(id: nextId++, position: const Offset(100, 100));
@@ -177,6 +180,8 @@ void _trainNetwork() async {
       selectedNode = null;
       isConnecting = false;
       logHistory.clear();
+      isTraining = false;
+      currentEpoch = 0;
     });
   }
 
@@ -187,12 +192,36 @@ void _trainNetwork() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Red Neuronal Visual')),
+      appBar: AppBar(
+        title: const Text('Red Neuronal Visual'),
+        actions: [
+          if (isTraining)
+            IconButton(
+              icon: const Icon(Icons.stop),
+              onPressed: () {
+                setState(() => isTraining = false);
+              },
+            )
+        ],
+      ),
       body: Stack(
         children: [
-          // Tabla fija en esquina superior izquierda
+          // Mostrar epoch encima de la tabla
           Positioned(
             top: 0,
+            left: 0,
+            right: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'Epoch: $currentEpoch',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          // Tabla fija en esquina superior izquierda
+          Positioned(
+            top: 30,
             left: 0,
             width: 800, // Ajusta ancho según necesites
             height: 180, // Ajusta alto según necesites
@@ -243,7 +272,7 @@ void _trainNetwork() async {
 
           // Aquí va el resto de la UI (red neuronal)
           Positioned.fill(
-            top: 180,
+            top: 210,
             child: Stack(
               children: [
                 GestureDetector(
@@ -334,27 +363,33 @@ void _trainNetwork() async {
     final i1 = Node(id: nextId++, position: const Offset(50, 100));
     final i2 = Node(id: nextId++, position: const Offset(50, 200));
     final o1 = Node(id: nextId++, position: const Offset(300, 150));
+    final rand = Random();
+    final bias = Node(id: nextId++, position: const Offset(50, 50));
+    bias.value = 1.0;
 
-    nodes.addAll([i1, i2, o1]);
+    nodes.addAll([i1, i2, o1, bias]);
     network.addNode(i1);
     network.addNode(i2);
     network.addNode(o1);
+    network.addNode(bias);
 
     i1.value = 0.0;
     i2.value = 0.0;
 
-    final e1 = Edge(from: i1, to: o1, weight: 1.0);
-    final e2 = Edge(from: i2, to: o1, weight: 1.0);
+    final e1 = Edge(from: i1, to: o1, weight: rand.nextBool() ? rand.nextDouble() * 0.5 + 0.5 : rand.nextDouble() * -0.5 - 0.5);
+    final e2 = Edge(from: i2, to: o1, weight: rand.nextBool() ? rand.nextDouble() * 0.5 + 0.5 : rand.nextDouble() * -0.5 - 0.5);
+    final e3 = Edge(from: bias, to: o1, weight: rand.nextBool() ? rand.nextDouble() * 0.5 + 0.5 : rand.nextDouble() * -0.5 - 0.5);
 
-    edges.addAll([e1, e2]);
+    edges.addAll([e1, e2, e3]);
     network.addEdge(e1);
     network.addEdge(e2);
+    network.addEdge(e3);
   });
 }
 
   // Entrenamiento para compuerta lógica AND sin bias, tabla simple
   void _entrenarAND() async {
-    const double learningRate = 2.0;
+    const double learningRate = 0.3;
     const trainingData = [
       [0.0, 0.0, 0.0],
       [0.0, 1.0, 0.0],
@@ -362,44 +397,76 @@ void _trainNetwork() async {
       [1.0, 1.0, 1.0],
     ];
 
-    for (int epoch = 0; epoch < 100; epoch++) {
-      for (final data in trainingData) {
-        if (nodes.length < 3) return; // Se requieren 2 entradas y 1 salida
+    isTraining = true;
+    currentEpoch = 0;
+
+    List<List<String>> history = trainingData.map((data) => [
+      data[0].toString(),
+      data[1].toString(),
+      data[2].toString(),
+      '',
+      '',
+    ]).toList();
+
+    for (int epoch = 0; epoch < 1000 && isTraining; epoch++) {
+      currentEpoch = epoch + 1;
+
+      for (int i = 0; i < trainingData.length; i++) {
+        final data = trainingData[i];
+        if (nodes.length < 4) return;
         final i1 = nodes[0];
         final i2 = nodes[1];
         final o1 = nodes[2];
+        final bias = nodes[3];
 
-        // Reset valor del nodo de salida
-        o1.value = 0.0;
+        for (final n in nodes) {
+          if (n != i1 && n != i2 && n != bias) n.value = 0.0;
+        }
 
         i1.value = data[0];
         i2.value = data[1];
         final expected = data[2];
 
-        // Propagación hacia adelante
         for (final edge in edges) {
+          await _animateEdge(edge);
           edge.to.value += edge.from.value * edge.weight;
         }
 
-        o1.value = 1 / (1 + exp(-o1.value)); // aplicar sigmoide
-        final obtained = o1.value;
+        o1.value = 1 / (1 + exp(-o1.value));
+        final obtained = o1.value.clamp(0.0, 1.0);
         final error = expected - obtained;
 
-        // Ajuste de pesos (solo conexiones hacia o1)
         for (final edge in edges.where((e) => e.to == o1)) {
-          final delta = learningRate * error * edge.from.value;
+          final derivative = obtained * (1 - obtained); // derivada del sigmoide
+          final delta = learningRate * error * derivative * edge.from.value;
           edge.weight += delta;
+          edge.weight = edge.weight.clamp(-1.0, 1.0);
+          await _animateEdge(edge);
         }
 
-        // Registrar para la tabla: x1, x2, y_esperado, y_obtenido, error
-        logHistory.add(
-          'x1=${i1.value}, x2=${i2.value}, y_esp=$expected, y_obt=${obtained.toStringAsFixed(2)}, err=${error.toStringAsFixed(2)}',
-        );
-
-        await Future.delayed(const Duration(milliseconds: 100));
-        setState(() {});
+        history[i][3] = obtained.toStringAsFixed(2);
+        history[i][4] = error.toStringAsFixed(2);
       }
+
+      await Future.delayed(const Duration(milliseconds: 150));
+      logHistory = history.map((row) => 'x1=${row[0]}, x2=${row[1]}, y_esp=${row[2]}, y_obt=${row[3]}, err=${row[4]}').toList();
+
+      logHistory.add('Epoch $currentEpoch - Pesos: ' +
+        edges.map((e) => '${e.from.id}->${e.to.id}=${e.weight.toStringAsFixed(2)}').join(', ') +
+        ' | Salida=${nodes[2].value.toStringAsFixed(2)}');
+
+      double avgError = history.map((row) => double.tryParse(row[4])?.abs() ?? 0.0).reduce((a, b) => a + b) / history.length;
+      logHistory.add('Epoch $currentEpoch - Error promedio: ${avgError.toStringAsFixed(4)}');
+
+      if (avgError <= 0.01) {
+        logHistory.add('Entrenamiento detenido automáticamente por bajo error promedio.');
+        break;
+      }
+
+      setState(() {});
     }
+
+    isTraining = false;
   }
 
   
